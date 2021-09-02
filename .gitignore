@@ -32,3 +32,12 @@ build/
 
 ### VS Code ###
 .vscode/
+/mvnw
+/.mvn/wrapper/maven-wrapper.jar
+/.mvn/wrapper/MavenWrapperDownloader.java
+/webpack.generated.js
+/package-lock.json
+/package.json
+/.mvn/wrapper/maven-wrapper.properties
+/mvnw.cmd
+/webpack.config.js
