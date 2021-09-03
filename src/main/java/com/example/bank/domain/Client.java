@@ -14,22 +14,27 @@ import java.math.BigInteger;
 @Table(name = "Client")
 @Data
 public class Client {
+    @Column(name = "ID")
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @NotNull
+    @Valid
     @Size(min = 10)
+    @Column(name = "FULLNAME")
     private String fullName;
-    @NotNull
+    @Valid
     @Size(min = 11)
     @Size(max = 11)
+    @Column(name = "PHONENUMBER")
     private String phoneNumber;
-    @NotNull
+    @Valid
     @Email
+    @Column(name = "EMAIL")
     private String email;
-    @NotNull
+    @Valid
     @Size(min = 6)
     @Size(max = 6)
+    @Column(name = "PASSPORTID")
     private String passportId;
 
 }

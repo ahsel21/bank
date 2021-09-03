@@ -23,8 +23,11 @@ public class ClientList extends VerticalLayout {
 
     private final TextField filter = new TextField("");
     private final Button addNewBtn = new Button("add new");
+    private final Button banksBtn = new Button("banksBtn");
+    private final Button creditsBtn = new Button("creditsBtn");
+    private final Button creditOffersBtn = new Button("creditOffersBtn");
     private HorizontalLayout toolbar = new HorizontalLayout(filter, addNewBtn);
-
+    private HorizontalLayout navigationbar = new HorizontalLayout(banksBtn, creditsBtn, creditOffersBtn);
 
 
     @Autowired
@@ -32,8 +35,7 @@ public class ClientList extends VerticalLayout {
         this.clientRepo = clientRepo;
         this.clientEditor = editor;
         clientGrid.setItems(clientRepo.findAll());
-        addComponentAsFirst(new Label("Список клиентов !!!!"));
-        add(toolbar, clientGrid, editor);
+        add(navigationbar, new Label("Список клиентов:"), toolbar, clientGrid, editor);
 
         filter.setPlaceholder("Type to filter");
         filter.setValueChangeMode(ValueChangeMode.EAGER);
@@ -53,6 +55,7 @@ public class ClientList extends VerticalLayout {
         fillList("");
 
     }
+
     private void fillList(String name) {
         if (name.isEmpty()) {
             clientGrid.setItems(this.clientRepo.findAll());

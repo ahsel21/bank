@@ -1,5 +1,6 @@
 package com.example.bank;
 
+import com.example.bank.repo.ClientRepo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
