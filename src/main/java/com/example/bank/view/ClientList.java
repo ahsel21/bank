@@ -13,31 +13,24 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
-@Route("/clients")
+@Route(value ="/clients", layout = MainUi.class)
 public class ClientList extends VerticalLayout {
 
     private final ClientRepo clientRepo;
     private final ClientEditor clientEditor;
     private Grid<Client> clientGrid = new Grid<>(Client.class);
-
     private final TextField filter = new TextField("");
-    private final Button addNewBtn = new Button("add new");
-    private final Button banksBtn = new Button("banksBtn");
-    private final Button creditsBtn = new Button("creditsBtn");
-    private final Button creditOffersBtn = new Button("creditOffersBtn");
+    private final Button addNewBtn = new Button("Добавить клиента");
     private HorizontalLayout toolbar = new HorizontalLayout(filter, addNewBtn);
-    private HorizontalLayout navigationbar = new HorizontalLayout(banksBtn, creditsBtn, creditOffersBtn);
-
 
     @Autowired
     public ClientList(ClientRepo clientRepo, ClientEditor editor) {
         this.clientRepo = clientRepo;
         this.clientEditor = editor;
         clientGrid.setItems(clientRepo.findAll());
-        add(navigationbar, new Label("Список клиентов:"), toolbar, clientGrid, editor);
+        add(new Label("Список клиентов:"), toolbar, clientGrid, editor);
 
-        filter.setPlaceholder("Type to filter");
+        filter.setPlaceholder("Поиск...");
         filter.setValueChangeMode(ValueChangeMode.EAGER);
         filter.addValueChangeListener(field -> fillList(field.getValue()));
 

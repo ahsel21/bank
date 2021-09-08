@@ -24,19 +24,21 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
 
     private Client client;
 
-    TextField fullName = new TextField("Full name");
-    TextField phoneNumber = new TextField("phoneNumber");
-    TextField email = new TextField("email");
-    TextField passportId = new TextField("Passport ID");
+    private TextField phoneNumber = new TextField("phoneNumber");
+    private TextField fullName = new TextField("Full name");
+    private TextField email = new TextField("email");
+    private TextField passportId = new TextField("Passport ID");
 
     private Button save = new Button("Save", VaadinIcon.CHECK.create());
     private Button cancel = new Button("Cancel");
     private Button delete = new Button("Delete", VaadinIcon.TRASH.create());
     private HorizontalLayout actions = new HorizontalLayout(save, cancel, delete);
+    private HorizontalLayout fields = new HorizontalLayout(fullName, phoneNumber, email, passportId);
 
-    Binder<Client> binder = new Binder<>(Client.class);
+    private Binder<Client> binder = new Binder<>(Client.class);
     @Setter
     private ChangeHandler changeHandler;
+
     public interface ChangeHandler {
         void onChange();
     }
@@ -44,8 +46,7 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
     @Autowired
     public ClientEditor(ClientRepo clientRepo) {
         this.clientRepo = clientRepo;
-        add(fullName, phoneNumber, email, passportId, actions);
-
+        add(fields, actions);
         binder.bindInstanceFields(this);
         setSpacing(true);
 
@@ -56,18 +57,19 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
                 .bind(Client::getFullName, Client::setFullName);
 
         binder.forField(phoneNumber)
-                .withValidator(new RegexpValidator("Only 1-9 allowed","\\d*"))
+                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
                 .withValidator(
                         phoneNumber -> phoneNumber.length() == 11,
                         "Phone number must contain at 11 characters")
                 .bind(Client::getPhoneNumber, Client::setPhoneNumber);
 
-
         binder.forField(email)
                 .withValidator(new EmailValidator(
                         "This doesn't look like a valid email address"))
                 .bind(Client::getEmail, Client::setEmail);
+
         binder.forField(passportId)
+                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
                 .withValidator(
                         passportId -> passportId.length() == 6,
                         "Passport ID must contain 6 characters")
@@ -75,11 +77,10 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
 
         save.getElement().getThemeList().add("primary");
         delete.getElement().getThemeList().add("error");
-
         addKeyPressListener(Key.ENTER, e -> save());
         save.addClickListener(e -> save());
         delete.addClickListener(e -> delete());
-        cancel.addClickListener(e -> editClient(client));
+        cancel.addClickListener(e -> setVisible(false));
         setVisible(false);
     }
 
@@ -88,8 +89,8 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
             setVisible(false);
             return;
         }
-        if (newClient.getId() != null) {
-            this.client = clientRepo.findById(newClient.getId()).orElse(newClient);
+        if (newClient.getClientId() != null) {
+            this.client = clientRepo.findById(newClient.getClientId()).orElse(newClient);
         } else {
             this.client = newClient;
         }
