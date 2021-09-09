@@ -22,7 +22,7 @@ public class MainUi extends AppLayout implements RouterLayout {
                 .set("margin", "0");
         Tab tabClient = createMenuItem("Клиенты", ClientList.class);
         Tab tabCredits = createMenuItem("Кредиты", CreditList.class);
-        Tab tabOffer = createMenuItem("Кредитные приложения", CreditOffeList.class);
+        Tab tabOffer = createMenuItem("Кредитные предложения", CreditOffeList.class);
         Tabs tabs = new Tabs(tabClient, tabCredits, tabOffer);
         tabs.setOrientation(Tabs.Orientation.VERTICAL);
         addToDrawer(tabs);
