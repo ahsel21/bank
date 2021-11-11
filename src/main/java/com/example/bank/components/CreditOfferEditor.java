@@ -103,14 +103,16 @@ public class CreditOfferEditor extends VerticalLayout {
     }
 
     private void save() {
-        Credit credit = creditService.findByName(creditNameLabel.getValue());
-        Client client = clientService.findByPassportId(clientPassportLabel.getValue());
-        BigDecimal amount = new BigDecimal(this.amount.getValue());
-        long count = Long.parseLong(monthCount.getValue());
-        client.setPassportId(clientPassportLabel.getValue());
-        CreditOffer creditOffer = new CreditOffer(client, credit, amount, count);
-        creditOfferService.addCreditOffer(creditOffer);
-        cancel();
+        if (binder.validate().isOk()) {
+            Credit credit = creditService.findByName(creditNameLabel.getValue());
+            Client client = clientService.findByPassportId(clientPassportLabel.getValue());
+            BigDecimal amount = new BigDecimal(this.amount.getValue());
+            long count = Long.parseLong(monthCount.getValue());
+            client.setPassportId(clientPassportLabel.getValue());
+            CreditOffer creditOffer = new CreditOffer(client, credit, amount, count);
+            creditOfferService.addCreditOffer(creditOffer);
+            cancel();
+        }
     }
 
     public void set(CreditOffer creditOffer) {
