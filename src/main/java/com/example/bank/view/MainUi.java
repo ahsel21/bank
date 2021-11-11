@@ -11,7 +11,6 @@ import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 
 @Route("/")
-
 public class MainUi extends AppLayout implements RouterLayout {
     public MainUi() {
 
@@ -22,7 +21,7 @@ public class MainUi extends AppLayout implements RouterLayout {
                 .set("margin", "0");
         Tab tabClient = createMenuItem("Клиенты", ClientList.class);
         Tab tabCredits = createMenuItem("Кредиты", CreditList.class);
-        Tab tabOffer = createMenuItem("Кредитные предложения", CreditOffeList.class);
+        Tab tabOffer = createMenuItem("Кредитные предложения", CreditOffersList.class);
         Tabs tabs = new Tabs(tabClient, tabCredits, tabOffer);
         tabs.setOrientation(Tabs.Orientation.VERTICAL);
         addToDrawer(tabs);
@@ -36,5 +35,4 @@ public class MainUi extends AppLayout implements RouterLayout {
         tab.add(link);
         return tab;
     }
-
 }

@@ -2,10 +2,12 @@ package com.example.bank.components;
 
 import com.example.bank.domain.Client;
 import com.example.bank.repo.ClientRepo;
+import com.example.bank.services.CreditOfferService;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyNotifier;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -15,27 +17,19 @@ import com.vaadin.flow.data.validator.RegexpValidator;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
 public class ClientEditor extends VerticalLayout implements KeyNotifier {
     private final ClientRepo clientRepo;
-
+    private final CreditOfferService creditOfferService;
+    private final int MIN_NAME_LENGTH = 10;
+    private final int MIN_TELEPHONE_LENGTH = 11;
+    private final int MAX_TELEPHONE_LENGTH = 13;
+    private final int PASSPORT_LENGTH = 6;
+    private final TextField fullName = new TextField("Full name");
+    private final Binder<Client> binder = new Binder<>(Client.class);
     private Client client;
-
-    private TextField phoneNumber = new TextField("phoneNumber");
-    private TextField fullName = new TextField("Full name");
-    private TextField email = new TextField("email");
-    private TextField passportId = new TextField("Passport ID");
-
-    private Button save = new Button("Save", VaadinIcon.CHECK.create());
-    private Button cancel = new Button("Cancel");
-    private Button delete = new Button("Delete", VaadinIcon.TRASH.create());
-    private HorizontalLayout actions = new HorizontalLayout(save, cancel, delete);
-    private HorizontalLayout fields = new HorizontalLayout(fullName, phoneNumber, email, passportId);
-
-    private Binder<Client> binder = new Binder<>(Client.class);
     @Setter
     private ChangeHandler changeHandler;
 
@@ -43,44 +37,57 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
         void onChange();
     }
 
-    @Autowired
-    public ClientEditor(ClientRepo clientRepo) {
+    public ClientEditor(ClientRepo clientRepo, CreditOfferService creditOfferService) {
         this.clientRepo = clientRepo;
+        this.creditOfferService = creditOfferService;
+        Button delete = new Button("Delete", VaadinIcon.TRASH.create());
+        Button cancel = new Button("Cancel");
+        Button save = new Button("Save", VaadinIcon.CHECK.create());
+        HorizontalLayout actions = new HorizontalLayout(save, cancel, delete);
+        TextField phoneNumberField = new TextField("Phone number");
+        TextField emailField = new TextField("Email");
+        TextField passportIdField = new TextField("Passport ID");
+        HorizontalLayout fields = new HorizontalLayout(fullName, phoneNumberField, emailField, passportIdField);
+
         add(fields, actions);
         binder.bindInstanceFields(this);
+
         setSpacing(true);
-
-        binder.forField(fullName)
-                .withValidator(
-                        name -> name.length() >= 10,
-                        "Name must contain at least 10 characters")
-                .bind(Client::getFullName, Client::setFullName);
-
-        binder.forField(phoneNumber)
-                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
-                .withValidator(
-                        phoneNumber -> phoneNumber.length() == 11,
-                        "Phone number must contain at 11 characters")
-                .bind(Client::getPhoneNumber, Client::setPhoneNumber);
-
-        binder.forField(email)
-                .withValidator(new EmailValidator(
-                        "This doesn't look like a valid email address"))
-                .bind(Client::getEmail, Client::setEmail);
-
-        binder.forField(passportId)
-                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
-                .withValidator(
-                        passportId -> passportId.length() == 6,
-                        "Passport ID must contain 6 characters")
-                .bind(Client::getPassportId, Client::setPassportId);
-
         save.getElement().getThemeList().add("primary");
         delete.getElement().getThemeList().add("error");
         addKeyPressListener(Key.ENTER, e -> save());
         save.addClickListener(e -> save());
         delete.addClickListener(e -> delete());
-        cancel.addClickListener(e -> setVisible(false));
+        cancel.addClickListener(e -> cancel());
+
+        binder.forField(fullName)
+                .withValidator(
+                        name -> name.length() >= MIN_NAME_LENGTH,
+                        "Name must contain at least 10 characters")
+                .bind(Client::getFullName, Client::setFullName);
+
+        binder.forField(phoneNumberField)
+                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
+                .withValidator(
+                        phoneNumber -> phoneNumber.length() >= MIN_TELEPHONE_LENGTH,
+                        "Phone number must contain from 11 to 13 characters")
+                .withValidator(
+                        phoneNumber -> phoneNumber.length() <= MAX_TELEPHONE_LENGTH,
+                        "Phone number must contain from 11 to 13 characters")
+                .bind(Client::getPhoneNumber, Client::setPhoneNumber);
+
+        binder.forField(emailField)
+                .withValidator(new EmailValidator(
+                        "This doesn't look like a valid email address"))
+                .bind(Client::getEmail, Client::setEmail);
+
+        binder.forField(passportIdField)
+                .withValidator(new RegexpValidator("Only digits allowed", "\\d*"))
+                .withValidator(
+                        passportId -> passportId.length() == PASSPORT_LENGTH,
+                        "Passport ID must contain 6 characters")
+                .bind(Client::getPassportId, Client::setPassportId);
+
         setVisible(false);
     }
 
@@ -100,6 +107,12 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
     }
 
     private void delete() {
+        if (!creditOfferService.findAllByClient(client).isEmpty()) {
+            Notification notification = new Notification(
+                    "Этот клиент имеет не закрытые кредитные предложения!", 5000);
+            notification.open();
+            return;
+        }
         clientRepo.delete(client);
         changeHandler.onChange();
     }
@@ -109,5 +122,8 @@ public class ClientEditor extends VerticalLayout implements KeyNotifier {
             clientRepo.save(client);
             changeHandler.onChange();
         }
+    }
+    public void cancel() {
+        changeHandler.onChange();
     }
 }

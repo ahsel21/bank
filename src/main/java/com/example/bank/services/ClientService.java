@@ -6,5 +6,8 @@ import java.util.List;
 
 public interface ClientService {
     List<Client> findAll();
+
     Client findByPassportId(String passportId);
+
+    List<Client> findByName(String name);
 }

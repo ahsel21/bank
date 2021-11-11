@@ -4,53 +4,92 @@ import com.example.bank.domain.Contribution;
 import com.example.bank.domain.CreditOffer;
 import com.example.bank.repo.ContributionRepo;
 import com.example.bank.services.ContributionService;
-import org.decimal4j.util.DoubleRounder;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ContributionServiceImpl implements ContributionService {
-    @Autowired
-    private ContributionRepo contributionRepo;
+    private final BigDecimal MONTH_COUNT = new BigDecimal(12);
+    private final BigDecimal ONE_HUNDRED_PERCENT = new BigDecimal(100);
+    private final ContributionRepo contributionRepo;
+
 
     @Override
     public List<Contribution> findAll() {
         return contributionRepo.findAll();
     }
 
-
     @Override
     public void add(Contribution contribution) {
         contributionRepo.save(contribution);
     }
 
-    public List<Contribution> calculate(CreditOffer creditOffer){
-        double interestRateMonth = creditOffer.getCredit().getInterestRate() / 12 / 100;
-        int countMonth = (int) creditOffer.getMonthCount();
-        double amount = creditOffer.getAmount();
-        double pay = (interestRateMonth * Math.pow((1 + interestRateMonth), countMonth)) / ((Math.pow((1 + interestRateMonth), countMonth)) - 1) * amount;
-        double percent = amount * interestRateMonth;
-        double body = pay - percent;
-        LocalDate payDay = LocalDate.now();
+    @Override
+    public void addAll(List<Contribution> contributions) {
+        contributionRepo.saveAll(contributions);
+    }
+
+    @Override
+    public List<Contribution> calculate(CreditOffer creditOffer) {
         List<Contribution> contributions = new ArrayList<>();
+        LocalDate payDay = LocalDate.now();
+        BigDecimal interestRateMonth;
+
+        interestRateMonth = creditOffer.getCredit().getInterestRate()
+                .setScale(5, RoundingMode.HALF_DOWN)
+                .divide(MONTH_COUNT, RoundingMode.HALF_DOWN)
+                .divide(ONE_HUNDRED_PERCENT, RoundingMode.HALF_DOWN);
+
+        int countMonth = (int) creditOffer.getMonthCount();
+        BigDecimal amount = creditOffer.getAmount().setScale(5, RoundingMode.HALF_DOWN);
+
+        BigDecimal pay = interestRateMonth.multiply(((BigDecimal.ONE.add(interestRateMonth))).pow(countMonth))
+                .setScale(5, RoundingMode.HALF_DOWN)
+                .divide((((BigDecimal.ONE.add(interestRateMonth)).pow(countMonth)).subtract(BigDecimal.ONE))
+                        .setScale(5, RoundingMode.HALF_DOWN), RoundingMode.HALF_DOWN)
+                .multiply(amount);
+
         for (int i = 1; i < countMonth; i++) {
-            percent = amount * interestRateMonth;
-            body = pay - percent;
-            amount = amount + (amount * interestRateMonth) - pay;
+            amount = amount.add(amount.multiply(interestRateMonth)).subtract(pay);
             payDay = payDay.plusMonths(1);
-            Contribution contribution = new Contribution((long) i, creditOffer, payDay, DoubleRounder.round(amount, 2),DoubleRounder.round(body, 2) , DoubleRounder.round(percent, 2), DoubleRounder.round(pay, 2));
-            contributions.add(contribution);
+            contributions.add(newContribution(i, creditOffer, amount, pay, payDay, interestRateMonth));
         }
-        percent = amount * interestRateMonth;
-        body = pay - percent;
-        amount = 0;
+        amount = BigDecimal.ZERO;
         payDay = payDay.plusMonths(1);
-        Contribution contribution = new Contribution((long) countMonth, creditOffer, payDay, DoubleRounder.round(amount, 2),DoubleRounder.round(body, 2) , DoubleRounder.round(percent, 2), DoubleRounder.round(pay, 2));
-        contributions.add(contribution);
+        contributions.add(newContribution(countMonth, creditOffer, amount, pay, payDay, interestRateMonth));
+        addAll(contributions); //СОХРОНЯЕМ ВСЕ ВЫПЛАТЫ В БД!
+
         return contributions;
+    }
+    public Contribution newContribution(int i, CreditOffer creditOffer, BigDecimal amount,  BigDecimal pay,
+                                        LocalDate payDay, BigDecimal interestRateMonth){
+        BigDecimal percent = amount.multiply(interestRateMonth);
+        BigDecimal body = pay.subtract(percent);
+        return  new Contribution(
+                (long) i,
+                creditOffer,
+                payDay,
+                amount.setScale(2, RoundingMode.HALF_DOWN),
+                body.setScale(2, RoundingMode.HALF_DOWN),
+                percent.setScale(2, RoundingMode.HALF_DOWN),
+                pay.setScale(2, RoundingMode.HALF_DOWN));
+    }
+
+    @Override
+    public List<Contribution> findAllByCreditOffer(CreditOffer creditOffer) {
+        return contributionRepo.findAllByCreditOffer(creditOffer);
+    }
+
+
+    @Override
+    public void deleteAll() {
+        contributionRepo.deleteAll();
     }
 }
