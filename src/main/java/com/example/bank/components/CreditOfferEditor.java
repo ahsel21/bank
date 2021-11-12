@@ -94,12 +94,7 @@ public class CreditOfferEditor extends VerticalLayout {
     }
 
     public void cancel() {
-        creditOffersList.updateList();
-        monthCount.setValue("");
-        amount.setValue("");
-        creditNameLabel.setValue("");
-        clientPassportLabel.setValue("");
-        setVisible(false);
+        UI.getCurrent().getPage().reload();
     }
 
     private void save() {
